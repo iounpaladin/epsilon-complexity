@@ -3,12 +3,12 @@
 
 #define MAX_ALGORITHM_STEPS 1000
 
-double stepBasedMaximum() {
+double stepBasedMaximum(double f(double)) {
     double maximum = 0; // we assume maximum is > 0
 
     for (int i = 0; i < MAX_ALGORITHM_STEPS; i++) { // 1000 steps
-        if (function((double)i / MAX_ALGORITHM_STEPS) > maximum) {
-            maximum = function((double)i / MAX_ALGORITHM_STEPS);
+        if (f((double)i / MAX_ALGORITHM_STEPS) > maximum) { // not necessarily increasing so this is fine
+            maximum = f((double)i / MAX_ALGORITHM_STEPS);
         }
     }
 
@@ -20,17 +20,25 @@ double stepBasedMaximum() {
  * For now, only works on R -> R
  */
 
-double complexity(double epsilon) {
+double complexity(double epsilon, double (f(double))) {
     // use `function` as the black-boxed function
     // because this is one-dimensional, h*_x = h*_1, so we don't need to implement a separate function
     if (fNontrivial()) {
         double minimum = 2;
-        double R = stepBasedMaximum();
+        double R = stepBasedMaximum(f); // find R
 
-        for (int i = ceil(1 / epsilon); i > 0; i--) { // 1000 steps
+//        for (int i = ceil(1 / epsilon); i > 0; i--) { // 1000 steps
+//            double h = (double)i / ceil(1 / epsilon);
+//            if (delta(h, f) / R > epsilon && h < minimum) {
+//                minimum = h;
+////                return h; // testing
+//                // -0.693147 1.60944 4.60517 6.21461
+//            }
+//        }
+        for (int i = 1; i <= ceil(1 / epsilon); i++) { // because delta is increasing in h this should be ok
             double h = (double)i / ceil(1 / epsilon);
-            if (delta(h) / R > epsilon && h < minimum) {
-                minimum = h;
+            if (delta(h, f) / R > epsilon) {
+                return h;
             }
         }
 
@@ -54,7 +62,7 @@ double applyPolynomial(std::vector<double> vector, double x) {
     return sum;
 }
 
-double delta(double h) {
+double delta(double h, double(f(double))) {
     int count = ceil(1 / h);
     std::vector<double> coeffs;
     std::vector<double> x;
@@ -62,7 +70,7 @@ double delta(double h) {
 
     for (int i = 0; i < count; i++) {
         x.push_back((double)i / count);
-        y.push_back(function((double)i / count));
+        y.push_back(f((double)i / count));
     }
 
     PolynomialRegression<double>().fitIt(x, y, count - 1, coeffs);
@@ -71,8 +79,8 @@ double delta(double h) {
 
     for (int i = 0; i < MAX_ALGORITHM_STEPS; i++) { // 1000 steps
         double x = (double)i / MAX_ALGORITHM_STEPS;
-        if (function(x) - applyPolynomial(coeffs, x) > maximum) {
-            maximum = function(x) - applyPolynomial(coeffs, x);
+        if (std::abs(f(x) - applyPolynomial(coeffs, x)) > maximum) {
+            maximum = std::abs(f(x) - applyPolynomial(coeffs, x));
         }
     }
 
